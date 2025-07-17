@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Calendar, Filter, TrendingUp, DollarSign, Package, Users, FileText, BarChart3 } from 'lucide-react';
+import { Download, Calendar, Filter, TrendingUp, DollarSign, Package, Users, FileText, BarChart3, Printer } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -102,6 +102,89 @@ export function Reports() {
     { id: 'products', name: 'Productos Más Vendidos', icon: TrendingUp, color: 'yellow' },
   ];
 
+  const handleExportPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Reporte DPattyModa - ${new Date().toLocaleDateString('es-PE')}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #FFD700; padding-bottom: 20px; }
+              .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 20px 0; }
+              .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+              .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+              .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              .table th { background-color: #f5f5f5; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>DPattyModa</h1>
+              <h2>Reporte de ${reportTypes.find(t => t.id === reportType)?.name}</h2>
+              <p>Generado el: ${new Date().toLocaleDateString('es-PE')} a las ${new Date().toLocaleTimeString('es-PE')}</p>
+            </div>
+            
+            <div class="stats">
+              ${reportData?.quickStats.map((stat: any) => `
+                <div class="stat-card">
+                  <h3>${stat.title}</h3>
+                  <p style="font-size: 24px; font-weight: bold; color: ${stat.positive ? 'green' : 'red'};">${stat.value}</p>
+                  <p style="color: ${stat.positive ? 'green' : 'red'};">${stat.change}</p>
+                </div>
+              `).join('')}
+            </div>
+            
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Ingresos</th>
+                  <th>Transacciones</th>
+                  <th>Promedio</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${reportData?.salesData.map((day: any) => `
+                  <tr>
+                    <td>${new Date(day.date).toLocaleDateString('es-PE')}</td>
+                    <td>S/ ${day.sales.toLocaleString()}</td>
+                    <td>${day.orders}</td>
+                    <td>S/ ${(day.sales / day.orders).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <div style="margin-top: 40px; text-align: center; color: #666;">
+              <p>DPattyModa - Pampa Hermosa, Loreto, Perú</p>
+              <p>+51 965 123 456 | info@dpattymoda.com</p>
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!reportData) return;
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Fecha,Ingresos,Transacciones,Promedio\n";
+    
+    reportData.salesData.forEach((day: any) => {
+      csvContent += `${day.date},${day.sales},${day.orders},${(day.sales / day.orders).toFixed(2)}\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `dpattymoda-reporte-${new Date().toISOString().split('T')[0]}.csv`);
+    link.click();
+  };
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -133,8 +216,19 @@ export function Reports() {
           <Button variant="outline" leftIcon={<Filter className="w-4 h-4" />}>
             Filtros Avanzados
           </Button>
-          <Button leftIcon={<Download className="w-4 h-4" />} className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700">
-            Exportar Todo
+          <Button 
+            leftIcon={<Printer className="w-4 h-4" />} 
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+            onClick={handleExportPDF}
+          >
+            Imprimir PDF
+          </Button>
+          <Button 
+            leftIcon={<Download className="w-4 h-4" />} 
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+            onClick={handleExportExcel}
+          >
+            Exportar Excel
           </Button>
         </div>
       </div>
@@ -282,10 +376,20 @@ export function Reports() {
               📋 Reporte Detallado - {reportTypes.find(t => t.id === reportType)?.name}
             </CardTitle>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                leftIcon={<FileText className="w-4 h-4" />}
+                onClick={handleExportPDF}
+              >
                 📄 PDF
               </Button>
-              <Button variant="outline" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                leftIcon={<FileText className="w-4 h-4" />}
+                onClick={handleExportExcel}
+              >
                 📊 Excel
               </Button>
             </div>

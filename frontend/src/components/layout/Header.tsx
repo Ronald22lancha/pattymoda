@@ -1,8 +1,9 @@
 // Header principal con información del usuario
 import { useState } from 'react';
-import { Bell, Search, Menu, LogOut, User, Settings, Sun, Moon, Zap } from 'lucide-react';
+import { Bell, Search, Menu, LogOut, User, Settings, Sun, Moon, Zap, Calculator, FileText, Download } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { Modal } from '../ui/Modal';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -12,6 +13,11 @@ interface HeaderProps {
 
 export function Header({ onToggleSidebar, onLogout, user }: HeaderProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [calculatorValue, setCalculatorValue] = useState('0');
+  const [calculatorOperation, setCalculatorOperation] = useState('');
+  const [calculatorPrevValue, setCalculatorPrevValue] = useState('');
   const [notifications] = useState([
     { id: 1, message: 'Stock bajo en productos', type: 'warning', time: '5 min' },
     { id: 2, message: 'Nueva venta registrada', type: 'success', time: '10 min' },
@@ -26,8 +32,61 @@ export function Header({ onToggleSidebar, onLogout, user }: HeaderProps) {
     INVENTARIO: 'Encargado de Inventario'
   };
 
+  const handleCalculatorClick = (value: string) => {
+    if (value === 'C') {
+      setCalculatorValue('0');
+      setCalculatorOperation('');
+      setCalculatorPrevValue('');
+    } else if (value === '=') {
+      if (calculatorOperation && calculatorPrevValue) {
+        const prev = parseFloat(calculatorPrevValue);
+        const current = parseFloat(calculatorValue);
+        let result = 0;
+        
+        switch (calculatorOperation) {
+          case '+': result = prev + current; break;
+          case '-': result = prev - current; break;
+          case '*': result = prev * current; break;
+          case '/': result = prev / current; break;
+        }
+        
+        setCalculatorValue(result.toString());
+        setCalculatorOperation('');
+        setCalculatorPrevValue('');
+      }
+    } else if (['+', '-', '*', '/'].includes(value)) {
+      setCalculatorOperation(value);
+      setCalculatorPrevValue(calculatorValue);
+      setCalculatorValue('0');
+    } else {
+      setCalculatorValue(calculatorValue === '0' ? value : calculatorValue + value);
+    }
+  };
+
+  const handleNewSale = () => {
+    window.location.hash = '#new-sale';
+    window.location.reload();
+  };
+
+  const handleExportData = () => {
+    // Generar reporte de exportación
+    const data = {
+      fecha: new Date().toISOString(),
+      usuario: user?.firstName + ' ' + user?.lastName,
+      tipo: 'Exportación completa'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dpattymoda-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm">
+    <>
+      <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Left Section */}
@@ -62,6 +121,26 @@ export function Header({ onToggleSidebar, onLogout, user }: HeaderProps) {
                 <Zap className="w-4 h-4 mr-1" />
                 Nueva Venta
               </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-600 hover:text-blue-600"
+                onClick={() => setIsCalculatorOpen(true)}
+              >
+                <Calculator className="w-4 h-4 mr-1" />
+                Calculadora
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-600 hover:text-green-600"
+                onClick={handleExportData}
+              >
+                <Download className="w-4 h-4 mr-1" />
+                Exportar
+              </Button>
             </div>
 
             {/* Theme Toggle */}
@@ -76,7 +155,12 @@ export function Header({ onToggleSidebar, onLogout, user }: HeaderProps) {
 
             {/* Notifications */}
             <div className="relative">
-              <Button variant="ghost" size="sm" className="relative text-gray-600 hover:text-yellow-600">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="relative text-gray-600 hover:text-yellow-600"
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              >
                 <Bell className="w-5 h-5" />
                 {notifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-red-600 rounded-full text-xs flex items-center justify-center text-white font-bold animate-pulse">
@@ -84,6 +168,35 @@ export function Header({ onToggleSidebar, onLogout, user }: HeaderProps) {
                   </span>
                 )}
               </Button>
+              
+              {/* Dropdown de notificaciones */}
+              {isNotificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-200">
+                    <h3 className="font-semibold text-gray-900">Notificaciones</h3>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {notifications.map((notification) => (
+                      <div key={notification.id} className="p-4 border-b border-gray-100 hover:bg-gray-50">
+                        <div className="flex items-start space-x-3">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${
+                            notification.type === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
+                          }`}></div>
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-900">{notification.message}</p>
+                            <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-4 border-t border-gray-200">
+                    <Button variant="ghost" size="sm" className="w-full">
+                      Ver todas las notificaciones
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* User Profile */}
@@ -143,6 +256,37 @@ export function Header({ onToggleSidebar, onLogout, user }: HeaderProps) {
           </div>
         </div>
       </div>
-    </header>
+      </header>
+
+      {/* Modal Calculadora */}
+      <Modal
+        isOpen={isCalculatorOpen}
+        onClose={() => setIsCalculatorOpen(false)}
+        title="🧮 Calculadora"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <div className="text-right text-2xl font-mono font-bold text-gray-900">
+              {calculatorValue}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-4 gap-2">
+            {['C', '/', '*', '-', '7', '8', '9', '+', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.', '='].map((btn, index) => (
+              <Button
+                key={index}
+                variant={['C'].includes(btn) ? 'danger' : ['=', '+', '-', '*', '/'].includes(btn) ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => handleCalculatorClick(btn)}
+                className={`h-12 ${btn === '0' ? 'col-span-2' : ''} ${btn === '=' && index > 15 ? 'row-span-2' : ''}`}
+              >
+                {btn}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }

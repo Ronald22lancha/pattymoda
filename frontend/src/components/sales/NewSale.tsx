@@ -252,10 +252,11 @@ export function NewSale() {
     
     try {
       const response = await CustomerService.createCustomer(customerData);
-      const newCustomer = response.data;
+      const newCustomer = response.data || response;
       setSelectedCustomer(newCustomer);
       setCustomers([...customers, newCustomer]);
       setIsCustomerModalOpen(false);
+      alert('Cliente creado exitosamente');
     } catch (error: any) {
       alert('Error al crear cliente: ' + (error.message || 'Error desconocido'));
     }

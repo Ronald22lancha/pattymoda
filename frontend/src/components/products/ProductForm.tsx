@@ -13,46 +13,20 @@ interface ProductFormProps {
 
 export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
   const [formData, setFormData] = useState({
-    name: product?.name || '',
+    nombre: product?.nombre || '',
     sku: product?.sku || '',
-    description: product?.description || '',
-    category: product?.category || '',
-    brand: product?.brand || '',
-    price: product?.price || '',
-    cost: product?.cost || '',
+    descripcion: product?.descripcion || '',
+    categoria: product?.categoria || { id: '' },
+    marca: product?.marca || '',
+    precio: product?.precio || '',
+    costo: product?.costo || '',
     stock: product?.stock || '',
-    minStock: product?.minStock || '',
-    sizes: product?.sizes || [],
-    colors: product?.colors || [],
-    isActive: product?.isActive ?? true,
+    stockMinimo: product?.stockMinimo || '',
+    imagen: product?.imagen || '',
+    activo: product?.activo ?? true,
   });
 
-  const [images, setImages] = useState<string[]>(product?.images || []);
-
-  const categories = [
-    'Blusas', 'Pantalones', 'Vestidos', 'Camisas', 'Faldas',
-    'Chaquetas', 'Shorts', 'Jeans', 'Tops', 'Accesorios'
-  ];
-
-  const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-  const availableColors = [
-    { name: 'Negro', hex: '#000000' },
-    { name: 'Blanco', hex: '#FFFFFF' },
-    { name: 'Azul', hex: '#3B82F6' },
-    category: product?.category?.id ? { id: product.category.id } : { id: '' },
-    { name: 'Verde', hex: '#10B981' },
-    { name: 'Rosa', hex: '#EC4899' },
-    { name: 'Amarillo', hex: '#F59E0B' },
-    { name: 'Gris', hex: '#6B7280' },
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({ ...formData, images });
-  };
-
-  const handleSizeToggle = (size: string) => {
-  // Debes obtener las categorías con id y nombre desde el backend, aquí ejemplo:
+  // Categorías que coinciden con tu base de datos
   const categories = [
     { id: 1, nombre: 'Ropa Femenina' },
     { id: 2, nombre: 'Ropa Masculina' },
@@ -72,18 +46,10 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
     { id: 16, nombre: 'Zapatillas' },
     { id: 17, nombre: 'Sandalias' },
   ];
-  };
 
-  const handleColorToggle = (color: string) => {
-    // Enviar la categoría como objeto { id: ... }
-    onSubmit({
-      ...formData,
-      category: { id: formData.category.id },
-      images
-    });
-      ? formData.colors.filter((c: string) => c !== color)
-      : [...formData.colors, color];
-    setFormData({ ...formData, colors: newColors });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
   return (
@@ -95,8 +61,8 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           <div className="space-y-4">
             <Input
               label="Nombre del Producto"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.nombre}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               required
             />
             
@@ -108,9 +74,12 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             />
             
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Categoría
+              </label>
               <select
-                value={formData.category.id}
-                onChange={(e) => setFormData({ ...formData, category: { id: e.target.value } })}
+                value={formData.categoria.id}
+                onChange={(e) => setFormData({ ...formData, categoria: { id: e.target.value } })}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
                 required
               >
@@ -119,15 +88,13 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                   <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                 ))}
               </select>
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
               </select>
             </div>
             
             <Input
               label="Marca"
-              value={formData.brand}
-              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+              value={formData.marca}
+              onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
             />
             
             <div>
@@ -135,8 +102,8 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                 Descripción
               </label>
               <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 rows={3}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
                 placeholder="Descripción del producto..."
@@ -154,8 +121,8 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                 label="Precio de Venta (S/)"
                 type="number"
                 step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                value={formData.precio}
+                onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
                 required
               />
               
@@ -163,8 +130,8 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                 label="Costo (S/)"
                 type="number"
                 step="0.01"
-                value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                value={formData.costo}
+                onChange={(e) => setFormData({ ...formData, costo: e.target.value })}
                 required
               />
             </div>
@@ -181,17 +148,17 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               <Input
                 label="Stock Mínimo"
                 type="number"
-                value={formData.minStock}
-                onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
+                value={formData.stockMinimo}
+                onChange={(e) => setFormData({ ...formData, stockMinimo: e.target.value })}
                 required
               />
             </div>
             
-            {formData.price && formData.cost && (
+            {formData.precio && formData.costo && (
               <div className="bg-green-50 p-3 rounded-lg">
                 <p className="text-sm text-green-800">
-                  <span className="font-medium">Margen:</span> S/ {(parseFloat(formData.price) - parseFloat(formData.cost)).toFixed(2)} 
-                  ({(((parseFloat(formData.price) - parseFloat(formData.cost)) / parseFloat(formData.price)) * 100).toFixed(1)}%)
+                  <span className="font-medium">Margen:</span> S/ {(parseFloat(formData.precio) - parseFloat(formData.costo)).toFixed(2)} 
+                  ({(((parseFloat(formData.precio) - parseFloat(formData.costo)) / parseFloat(formData.precio)) * 100).toFixed(1)}%)
                 </p>
               </div>
             )}
@@ -199,59 +166,53 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
         </Card>
       </div>
 
-      {/* Tallas */}
+      {/* Imagen del Producto */}
       <Card className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">Tallas Disponibles</h3>
-        <div className="flex flex-wrap gap-2">
-          {availableSizes.map((size) => (
-            <button
-              key={size}
-              type="button"
-              onClick={() => handleSizeToggle(size)}
-              className={`px-3 py-2 rounded-lg border-2 transition-colors ${
-                formData.sizes.includes(size)
-                  ? 'border-yellow-500 bg-yellow-100 text-yellow-800'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-      </Card>
-
-      {/* Colores */}
-      <Card className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">Colores Disponibles</h3>
-        <div className="grid grid-cols-4 gap-3">
-          {availableColors.map((color) => (
-            <button
-              key={color.name}
-              type="button"
-              onClick={() => handleColorToggle(color.name)}
-              className={`flex items-center space-x-2 p-2 rounded-lg border-2 transition-colors ${
-                formData.colors.includes(color.name)
-                  ? 'border-yellow-500 bg-yellow-50'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              <div
-                className="w-6 h-6 rounded-full border-2 border-gray-300"
-                style={{ backgroundColor: color.hex }}
+        <h3 className="font-semibold text-gray-900 mb-4">Imagen del Producto</h3>
+        <div className="space-y-4">
+          <Input
+            label="URL de la Imagen"
+            value={formData.imagen}
+            onChange={(e) => setFormData({ ...formData, imagen: e.target.value })}
+            placeholder="https://ejemplo.com/imagen.jpg"
+          />
+          
+          {formData.imagen && (
+            <div className="mt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Vista previa:</p>
+              <img
+                src={formData.imagen}
+                alt="Vista previa"
+                className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2';
+                }}
               />
-              <span className="text-sm">{color.name}</span>
-            </button>
-          ))}
+            </div>
+          )}
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Sugerencia:</strong> Puedes usar imágenes de Pexels o subir tus propias imágenes a un servicio de hosting.
+            </p>
+          </div>
         </div>
       </Card>
 
-      {/* Imágenes */}
+      {/* Estado del Producto */}
       <Card className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">Imágenes del Producto</h3>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-          <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-500">Arrastra y suelta imágenes aquí, o haz clic para seleccionar</p>
-          <p className="text-xs text-gray-400 mt-1">PNG, JPG hasta 5MB cada una</p>
+        <h3 className="font-semibold text-gray-900 mb-4">Estado del Producto</h3>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="activo"
+            checked={formData.activo}
+            onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+            className="rounded border-gray-300"
+          />
+          <label htmlFor="activo" className="ml-2 text-sm text-gray-700">
+            Producto activo (visible en el sistema)
+          </label>
         </div>
       </Card>
 

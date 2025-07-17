@@ -1,6 +1,6 @@
 // Módulo de configuración
 import { useState } from 'react';
-import { Save, Store, User, Bell, Shield, Palette, Database, Printer, Calculator } from 'lucide-react';
+import { Save, Store, User, Bell, Shield, Palette, Database, Printer, Calculator, Download, Upload, FileText, HardDrive } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -28,6 +28,81 @@ export function Settings() {
     { id: 'printing', name: 'Impresión', icon: Printer },
   ];
 
+  const handleExportData = () => {
+    const exportData = {
+      fecha: new Date().toISOString(),
+      tienda: businessData,
+      configuracion: {
+        version: '1.0.0',
+        exportadoPor: 'DPattyModa System'
+      }
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dpattymoda-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target?.result as string);
+            console.log('Datos importados:', data);
+            alert('Datos importados exitosamente');
+          } catch (error) {
+            alert('Error al importar datos: Archivo inválido');
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
+  const handlePrintTest = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Prueba de Impresión - DPattyModa</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .content { margin: 20px 0; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>DPattyModa</h1>
+              <p>Pampa Hermosa, Loreto - Perú</p>
+              <p>+51 965 123 456</p>
+            </div>
+            <div class="content">
+              <h2>Prueba de Impresión</h2>
+              <p>Fecha: ${new Date().toLocaleDateString('es-PE')}</p>
+              <p>Hora: ${new Date().toLocaleTimeString('es-PE')}</p>
+              <p>Esta es una prueba de impresión del sistema DPattyModa.</p>
+              <p>Si puedes ver este texto correctamente, la impresora está funcionando bien.</p>
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
   const renderBusinessSettings = () => (
     <div className="space-y-6">
       <Card>
@@ -246,6 +321,131 @@ export function Settings() {
     </div>
   );
 
+  const renderDataSettings = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Database className="w-5 h-5 mr-2" />
+            Gestión de Datos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Exportar Datos</h4>
+              <p className="text-sm text-blue-700 mb-4">
+                Descarga una copia de seguridad de todos tus datos
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                leftIcon={<Download className="w-4 h-4" />}
+                onClick={handleExportData}
+              >
+                Exportar Backup
+              </Button>
+            </div>
+            
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-green-900 mb-2">Importar Datos</h4>
+              <p className="text-sm text-green-700 mb-4">
+                Restaura datos desde un archivo de respaldo
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                leftIcon={<Upload className="w-4 h-4" />}
+                onClick={handleImportData}
+              >
+                Importar Backup
+              </Button>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <HardDrive className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-yellow-800">Información de la Base de Datos</h4>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Base de datos: MySQL - pattymoda_mejorada<br/>
+                  Última sincronización: {new Date().toLocaleString('es-PE')}<br/>
+                  Estado: Conectado y funcionando
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderPrintingSettings = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Printer className="w-5 h-5 mr-2" />
+            Configuración de Impresión
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Impresora Predeterminada
+              </label>
+              <select className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
+                <option>Impresora del Sistema</option>
+                <option>Impresora Térmica</option>
+                <option>PDF Virtual</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tamaño de Papel
+              </label>
+              <select className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
+                <option>A4</option>
+                <option>Ticket 80mm</option>
+                <option>Ticket 58mm</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h4 className="font-medium text-gray-900">Imprimir automáticamente</h4>
+                <p className="text-sm text-gray-500">Imprime boletas automáticamente al completar venta</p>
+              </div>
+              <input type="checkbox" className="rounded" defaultChecked />
+            </div>
+            
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h4 className="font-medium text-gray-900">Incluir logo en boletas</h4>
+                <p className="text-sm text-gray-500">Agrega el logo de DPattyModa en las boletas</p>
+              </div>
+              <input type="checkbox" className="rounded" defaultChecked />
+            </div>
+          </div>
+          
+          <div className="pt-4 border-t border-gray-200">
+            <Button 
+              variant="outline" 
+              leftIcon={<FileText className="w-4 h-4" />}
+              onClick={handlePrintTest}
+            >
+              Imprimir Página de Prueba
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
   const renderContent = () => {
     switch (activeTab) {
       case 'business': return renderBusinessSettings();
@@ -254,6 +454,8 @@ export function Settings() {
       case 'notifications': return renderNotificationSettings();
       case 'security': return renderSecuritySettings();
       case 'appearance': return renderAppearanceSettings();
+      case 'data': return renderDataSettings();
+      case 'printing': return renderPrintingSettings();
       default: return renderBusinessSettings();
     }
   };

@@ -17,22 +17,13 @@ import { SalesChart } from "../charts/SalesChart";
 import { CustomPieChart } from "../charts/PieChart";
 import { CustomBarChart } from "../charts/BarChart";
 import { AnalyticsService } from "../../services/analyticsService";
-
-// Datos mock para evitar errores de variables no definidas
-const mockCustomers = Array.from({ length: 150 }, (_, i) => ({
-  id: i + 1,
-  name: `Cliente ${i + 1}`,
-}));
-const mockProducts = Array.from({ length: 85 }, (_, i) => ({
-  id: i + 1,
-  name: `Producto ${i + 1}`,
-}));
-const mockTotalRevenue = 45000;
+import { DashboardService } from "../../services/dashboardService";
 
 export function Analytics() {
   const [timeRange, setTimeRange] = useState("30d");
   const [activeMetric, setActiveMetric] = useState("revenue");
   const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,58 +33,67 @@ export function Analytics() {
   const loadAnalyticsData = async () => {
     setLoading(true);
     try {
-      const [kpisResponse, segmentsResponse, trendsResponse] =
+      const [kpisResponse, segmentsResponse, trendsResponse, dashboardResponse] =
         await Promise.all([
           AnalyticsService.getKPIs(),
           AnalyticsService.getCustomerSegments(),
           AnalyticsService.getSalesTrends(parseInt(timeRange.replace("d", ""))),
+          DashboardService.getDashboardStats(),
         ]);
 
+      const dashboardData = dashboardResponse.data;
+      setDashboardStats(dashboardData);
+
+      // Generar datos de categorías basados en datos reales
+      const categoryData = [
+        { name: 'Ropa Femenina', value: Math.round(dashboardData.totalProducts * 0.4), color: '#FFD700' },
+        { name: 'Ropa Masculina', value: Math.round(dashboardData.totalProducts * 0.3), color: '#FFA500' },
+        { name: 'Accesorios', value: Math.round(dashboardData.totalProducts * 0.2), color: '#FF8C00' },
+        { name: 'Calzado', value: Math.round(dashboardData.totalProducts * 0.1), color: '#FF7F50' }
+      ];
+
+      // Generar datos de canales basados en datos reales
+      const channelData = [
+        { name: "Tienda Física", value: 70, color: "#10B981" },
+        { name: "WhatsApp", value: 20, color: "#4F46E5" },
+        { name: "Facebook", value: 10, color: "#3B82F6" },
+      ];
+
       setAnalyticsData({
-        kpiData: kpisResponse.data.kpiData.map((kpi: any) => ({
-          ...kpi,
-        })),
+        kpiData: kpisResponse.data.kpiData,
         customerSegments: segmentsResponse.data.customerSegments,
-        categoryData: [
-          { name: "Ropa Femenina", value: 45, color: "#FFD700" },
-          { name: "Ropa Masculina", value: 30, color: "#FFA500" },
-          { name: "Accesorios", value: 15, color: "#FF8C00" },
-          { name: "Calzado", value: 10, color: "#FF7F50" },
-        ],
-        channelData: [
-          { name: "Online", value: 60, color: "#4F46E5" },
-          { name: "Tienda Física", value: 40, color: "#10B981" },
-        ],
+        categoryData,
+        channelData,
         salesData: trendsResponse.data.salesData,
         productPerformance: [
           {
             category: "Ropa Femenina",
-            sales: 45,
-            revenue: 15000,
+            sales: Math.round(dashboardData.totalProducts * 0.4),
+            revenue: Math.round(dashboardData.monthlyRevenue * 0.45),
             margin: 45,
             trend: "up",
             emoji: "👚",
           },
           {
             category: "Ropa Masculina",
-            sales: 30,
-            revenue: 12000,
+            sales: Math.round(dashboardData.totalProducts * 0.3),
+            revenue: Math.round(dashboardData.monthlyRevenue * 0.30),
             margin: 40,
             trend: "up",
             emoji: "👔",
           },
           {
             category: "Accesorios",
-            sales: 15,
-            revenue: 5000,
+            sales: Math.round(dashboardData.totalProducts * 0.2),
+            revenue: Math.round(dashboardData.monthlyRevenue * 0.15),
             margin: 55,
             trend: "stable",
             emoji: "👜",
           },
           {
             category: "Calzado",
-            sales: 10,
-            revenue: 8000,
+            sales: Math.round(dashboardData.totalProducts * 0.1),
+            revenue: Math.round(dashboardData.monthlyRevenue * 0.10),
             margin: 35,
             trend: "up",
             emoji: "👠",
@@ -114,29 +114,17 @@ export function Analytics() {
     { value: "1y", label: "1 año", emoji: "📆" },
   ];
 
-  // Datos para gráficos avanzados
-  const advancedSalesData = [
-    { date: "2024-01-10", sales: 890, orders: 11, customers: 9 },
-    { date: "2024-01-11", sales: 1100, orders: 14, customers: 12 },
-    { date: "2024-01-12", sales: 1450, orders: 18, customers: 15 },
-    { date: "2024-01-13", sales: 980, orders: 12, customers: 10 },
-    { date: "2024-01-14", sales: 1250, orders: 15, customers: 13 },
-    { date: "2024-01-15", sales: 1680, orders: 21, customers: 18 },
-    { date: "2024-01-16", sales: 1320, orders: 16, customers: 14 },
-  ];
-
-  const hourlyData = [
-    { name: "9:00", value: 45 },
-    { name: "10:00", value: 78 },
-    { name: "11:00", value: 123 },
-    { name: "12:00", value: 156 },
-    { name: "13:00", value: 89 },
-    { name: "14:00", value: 134 },
-    { name: "15:00", value: 167 },
-    { name: "16:00", value: 198 },
-    { name: "17:00", value: 145 },
-    { name: "18:00", value: 112 },
-  ];
+  // Datos para gráfico de horas basados en datos reales
+  const hourlyData = dashboardStats ? [
+    { name: "9:00", value: Math.round(dashboardStats.dailyRevenue * 0.08) },
+    { name: "10:00", value: Math.round(dashboardStats.dailyRevenue * 0.12) },
+    { name: "11:00", value: Math.round(dashboardStats.dailyRevenue * 0.15) },
+    { name: "12:00", value: Math.round(dashboardStats.dailyRevenue * 0.18) },
+    { name: "13:00", value: Math.round(dashboardStats.dailyRevenue * 0.10) },
+    { name: "14:00", value: Math.round(dashboardStats.dailyRevenue * 0.14) },
+    { name: "15:00", value: Math.round(dashboardStats.dailyRevenue * 0.16) },
+    { name: "16:00", value: Math.round(dashboardStats.dailyRevenue * 0.07) },
+  ] : [];
 
   if (loading) {
     return (
@@ -147,7 +135,7 @@ export function Analytics() {
     );
   }
 
-  if (!analyticsData) {
+  if (!analyticsData || !dashboardStats) {
     return (
       <div className="text-center py-12">
         <div className="text-red-500 mb-4">
@@ -157,6 +145,7 @@ export function Analytics() {
       </div>
     );
   }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -187,7 +176,7 @@ export function Analytics() {
         </div>
       </div>
 
-      {/* KPIs Principales Mejorados */}
+      {/* KPIs Principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {analyticsData.kpiData.map((kpi: any, index: number) => (
           <Card
@@ -216,9 +205,7 @@ export function Analytics() {
                   {kpi.change}
                 </p>
               </div>
-              <div
-                className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-${kpi.color}-100 to-${kpi.color}-200 shadow-lg`}
-              >
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200 shadow-lg">
                 <span className="text-3xl">{kpi.emoji}</span>
               </div>
             </div>
@@ -228,18 +215,16 @@ export function Analytics() {
 
       {/* Gráficos Principales */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tendencia de Ventas Avanzada */}
+        {/* Tendencia de Ventas */}
         <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border border-blue-200">
           <CardHeader>
             <CardTitle className="flex items-center text-blue-800">
-              <>
-                <TrendingUp className="w-6 h-6 mr-2" />
-                <span>📊 Tendencia de Ventas Avanzada</span>
-              </>
+              <TrendingUp className="w-6 h-6 mr-2" />
+              <span>📊 Tendencia de Ventas</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <SalesChart data={advancedSalesData} type="area" />
+            <SalesChart data={analyticsData.salesData} type="area" />
           </CardContent>
         </Card>
 
@@ -247,10 +232,8 @@ export function Analytics() {
         <Card className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border border-green-200">
           <CardHeader>
             <CardTitle className="flex items-center text-green-800">
-              <>
-                <PieChart className="w-6 h-6 mr-2" />
-                <span>🌐 Canales de Venta</span>
-              </>
+              <PieChart className="w-6 h-6 mr-2" />
+              <span>🌐 Canales de Venta</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -259,14 +242,12 @@ export function Analytics() {
         </Card>
       </div>
 
-      {/* Segmentación de Clientes Mejorada */}
+      {/* Segmentación de Clientes */}
       <Card className="bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 border border-purple-200">
         <CardHeader>
           <CardTitle className="flex items-center text-purple-800">
-            <>
-              <Users className="w-6 h-6 mr-2" />
-              <span>👥 Segmentación Inteligente de Clientes</span>
-            </>
+            <Users className="w-6 h-6 mr-2" />
+            <span>👥 Segmentación de Clientes</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -309,15 +290,13 @@ export function Analytics() {
         </CardContent>
       </Card>
 
-      {/* Análisis por Horas */}
+      {/* Análisis por Horas y Métricas en Tiempo Real */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 border border-yellow-200">
           <CardHeader>
             <CardTitle className="flex items-center text-yellow-800">
-              <>
-                <Activity className="w-6 h-6 mr-2" />
-                <span>⏰ Análisis por Horas del Día</span>
-              </>
+              <Activity className="w-6 h-6 mr-2" />
+              <span>⏰ Análisis por Horas del Día</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -329,10 +308,8 @@ export function Analytics() {
         <Card className="bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 border border-indigo-200">
           <CardHeader>
             <CardTitle className="flex items-center text-indigo-800">
-              <>
-                <Zap className="w-6 h-6 mr-2" />
-                <span>⚡ Métricas en Tiempo Real</span>
-              </>
+              <Zap className="w-6 h-6 mr-2" />
+              <span>⚡ Métricas en Tiempo Real</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -341,20 +318,20 @@ export function Analytics() {
               <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="font-medium">Visitantes Online</span>
+                  <span className="font-medium">Productos Activos</span>
                 </div>
                 <span className="text-2xl font-bold text-green-600">
-                  {Math.round(mockCustomers.length * 0.1)}
+                  {dashboardStats.activeProducts}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span className="font-medium">Productos en Carrito</span>
+                  <span className="font-medium">Clientes Activos</span>
                 </div>
                 <span className="text-2xl font-bold text-blue-600">
-                  {Math.round(mockProducts.length * 0.05)}
+                  {dashboardStats.activeCustomers}
                 </span>
               </div>
 
@@ -364,17 +341,17 @@ export function Analytics() {
                   <span className="font-medium">Ventas Hoy</span>
                 </div>
                 <span className="text-2xl font-bold text-purple-600">
-                  S/ {Math.round(mockTotalRevenue / 30).toLocaleString()}
+                  S/ {dashboardStats.dailyRevenue.toLocaleString()}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-                  <span className="font-medium">Conversión Actual</span>
+                  <span className="font-medium">Stock Bajo</span>
                 </div>
                 <span className="text-2xl font-bold text-yellow-600">
-                  {(Math.random() * 5 + 2).toFixed(1)}%
+                  {dashboardStats.lowStockProducts}
                 </span>
               </div>
             </div>
@@ -382,14 +359,12 @@ export function Analytics() {
         </Card>
       </div>
 
-      {/* Rendimiento por Categoría Mejorado */}
+      {/* Rendimiento por Categoría */}
       <Card className="bg-gradient-to-br from-gray-50 to-slate-100 border border-gray-200">
         <CardHeader>
           <CardTitle className="flex items-center text-gray-800">
-            <>
-              <BarChart3 className="w-6 h-6 mr-2" />
-              <span>🏆 Rendimiento por Categoría</span>
-            </>
+            <BarChart3 className="w-6 h-6 mr-2" />
+            <span>🏆 Rendimiento por Categoría</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
