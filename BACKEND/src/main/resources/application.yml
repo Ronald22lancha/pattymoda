@@ -1,0 +1,188 @@
+# Configuración principal para DPattyModa
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+
+spring:
+  application:
+    name: dpatty-moda-sistema
+
+  # Configuración de base de datos
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/dpatty_moda}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 30000
+
+  # JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: America/Lima
+    open-in-view: false
+
+  # Redis para caché
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 8
+          min-idle: 2
+
+  # Configuración de correo
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  # Jackson para JSON
+  jackson:
+    time-zone: America/Lima
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+  # Cache
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hora en milisegundos
+
+# Configuración de seguridad JWT
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dpatty-moda-secret-key-very-long-and-secure-2024}
+      expiration: 86400000 # 24 horas en milisegundos
+      refresh-expiration: 604800000 # 7 días en milisegundos
+    max-intentos-login: 5
+    tiempo-bloqueo-minutos: 30
+
+  # Configuración de la empresa
+  empresa:
+    nombre: DPattyModa
+    ruc: 20123456789
+    direccion: Pampa Hermosa, Loreto, Perú
+    telefono: +51 XXX XXX XXX
+    email: contacto@dpattymoda.com
+    web: https://dpattymoda.com
+
+  # Configuración de pagos
+  pagos:
+    yape:
+      enabled: true
+      numero: ${YAPE_NUMERO:}
+    plin:
+      enabled: true
+      numero: ${PLIN_NUMERO:}
+    lukita:
+      enabled: true
+      numero: ${LUKITA_NUMERO:}
+
+  # Configuración de envíos
+  envios:
+    costo-local: 10.00
+    costo-nacional: 25.00
+    peso-maximo-kg: 20.0
+    dias-entrega-local: 1
+    dias-entrega-nacional: 5
+
+  # Configuración de archivos
+  archivos:
+    directorio-imagenes: ${DIRECTORIO_IMAGENES:./uploads/imagenes}
+    directorio-documentos: ${DIRECTORIO_DOCUMENTOS:./uploads/documentos}
+    tamaño-maximo-mb: 10
+
+# OpenAPI/Swagger
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+# Actuator para monitoreo
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Logging
+logging:
+  level:
+    com.dpattymoda: INFO
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/dpatty-moda.log
+
+# Configuración de perfiles
+---
+spring:
+  config:
+    activate:
+      on-profile: development
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dpatty_moda_dev
+    
+logging:
+  level:
+    com.dpattymoda: DEBUG
+    
+---
+spring:
+  config:
+    activate:
+      on-profile: production
+
+  datasource:
+    url: ${DATABASE_URL}
+    
+logging:
+  level:
+    com.dpattymoda: WARN
+    org.springframework.security: WARN
+    org.hibernate: WARN
