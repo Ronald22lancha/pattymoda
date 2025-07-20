@@ -11,7 +11,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 
 /**
  * Configuración de base de datos para DPattyModa
- * Soporta tanto PostgreSQL (Supabase) como MySQL
+ * Configurado para MySQL
  */
 @Configuration
 @EnableJpaRepositories(basePackages = "com.dpattymoda.repository")
